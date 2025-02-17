@@ -9,9 +9,13 @@ const App = () => {
     inflationRate: 3.43,
     currentBankAsset: 100000000,
     interestRate: 4.7,
-    numberOfStages: 1,
     savePerMonth: 7000000,
     annualIncrease: 10,
+
+    riskAllocation: 50,
+    riskFreeReturn: 2,
+    riskyReturn: 8,
+    riskyRisk: 15,
   });
 
   const labels = {
@@ -24,13 +28,17 @@ const App = () => {
     numberOfStages: "Number of Stages",
     savePerMonth: "Save Per Month (VND)",
     annualIncrease: "Annual Increase (%)",
+    riskAllocation: "Percentage of Risky Asset (u%)",
+    riskFreeReturn: "Return of Risk-free Asset (R_f%)",
+    riskyReturn: "Expected Return of Risky Asset (μ%)",
+    riskyRisk: "Risk of Risky Asset (σ%)",
   };
 
   const [result, setResult] = useState(null);
   const [chartData, setChartData] = useState([]);
 
   const calculateFinancialFreedom = () => {
-    const { currentAge, retirementAge, desiredSpending, inflationRate, currentBankAsset, interestRate, savePerMonth, annualIncrease } = inputs;
+    const { currentAge, retirementAge, desiredSpending, inflationRate, currentBankAsset, interestRate, savePerMonth, annualIncrease, riskFreeReturn, riskyReturn, riskyRisk, riskAllocation} = inputs;
     const yearsToRetirement = retirementAge - currentAge;
     
     const IR = inflationRate / 100;
@@ -38,10 +46,19 @@ const App = () => {
     const AI = annualIncrease / 100;
     const withdrawalRate = 0.040805;
 
+    
+    const RF = riskFreeReturn / 100; //Risk management
+    const RR = riskyReturn / 100;
+    const sigma = riskyRisk / 100;
+    const u = riskAllocation / 100;
+
     const fv_des = desiredSpending * 12 * Math.pow(1 + IR, yearsToRetirement);
     const retirement_corpus = fv_des / withdrawalRate;
 
     let fv_savings = currentBankAsset;
+    let wr_savings = currentBankAsset;
+    let expectedWealth = currentBankAsset;
+    let lowerPercentileWealth = currentBankAsset;
     let monthlySavings = savePerMonth;
     let data = [];
     let financialFreedomAge = null;
@@ -52,10 +69,28 @@ const App = () => {
       let annualSavings = 0;
       for (let month = 1; month <= 12; month++) {
         annualSavings += monthlySavings;
-        fv_savings = fv_savings * (1 + monthlyRate) + monthlySavings;
+// Box-Muller transform for normal distribution
+const Z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
+
+// Log-normal return calculation
+const riskyReturn = Math.exp((RR - (Math.pow(sigma, 2) / 2)) / 12 + (sigma / Math.sqrt(12)) * Z) - 1;
+const totalReturn = u * riskyReturn + (1 - u) * (Math.pow(1 + RF, 1 / 12) - 1);
+
+fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
+
+
+        wr_savings = wr_savings * (1 + monthlyRate) + monthlySavings;
+
+
+        // Calculate Expected Wealth [E(W)]
+        expectedWealth = expectedWealth * (1 + (u * RR + (1 - u) * RF) / 12) + monthlySavings;
+
+        // Calculate Lower Percentile Wealth [Q(W)] - Conservative Estimate
+        const downsideReturn = u * (RR - sigma) + (1 - u) * RF;
+        lowerPercentileWealth = lowerPercentileWealth * (1 + downsideReturn / 12) + monthlySavings;
       }
       monthlySavings *= (1 + AI);
-      data.push({ age, accumulatedWealth: fv_savings, requiredSavings: retirement_corpus, financialSavings: annualSavings });
+      data.push({ age, accumulatedWealth: fv_savings, requiredSavings: retirement_corpus, financialSavings: annualSavings, without_risk_assets: wr_savings, expectedWealth, lowerPercentileWealth });
       
       if (!financialFreedomAge && fv_savings >= retirement_corpus) {
         financialFreedomAge = age;
@@ -85,8 +120,9 @@ const App = () => {
       <div className="flex w-full">
         <div className="bg-white text-black rounded-3xl p-6 shadow-lg w-1/6 mr-6">
           <h2 className="text-center font-bold text-xl mb-4">What-If Scenario</h2>
-          {Object.keys(inputs).map((key) => (
+          {Object.keys(inputs).map((key, index) => (
             <div key={key} className="mb-2">
+              {key === "riskAllocation" && <h3 className="text-center font-bold text-lg mb-2">Risk Management</h3>}
               <label className="block text-sm font-medium">{labels[key]}:</label>
               <input
                 type="text"
@@ -112,22 +148,24 @@ const App = () => {
               <YAxis tickCount={10} domain={['auto', 'auto']} tickFormatter={(value) => value.toLocaleString()} />
               <Tooltip formatter={(value) => value.toLocaleString()} />
               <Legend />
-              <Line type="monotone" dataKey="accumulatedWealth" stroke="#ff7300" name="Accumulated Wealth" />
+              <Line type="monotone" dataKey="accumulatedWealth" stroke="#8B5CF6" name="Accumulated Wealth" />
+              <Line type="monotone" dataKey="without_risk_assets" stroke="#387908" name="Without-risk Wealth" />
               <Line type="monotone" dataKey="requiredSavings" stroke="#4dc94d" name="Required Savings" />
-              <Line type="monotone" dataKey="financialSavings" stroke="#FFD700" name="Annual Savings" />
+              <Line type="monotone" dataKey="financialSavings" stroke="#FFD700" name="Financial Savings" />
+              <Line type="monotone" dataKey="expectedWealth" stroke="#60A5FA" name="E[W] (Expected Wealth)" />
+              <Line type="monotone" dataKey="lowerPercentileWealth" stroke="#FF0000" name="Q[W] (Lower Percentile Wealth)" />
+
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
-      
       {result && (
-        <div className="bg-white text-black p-4 rounded-3xl shadow-lg w-2/3 mt-6 text-center">
-          {result.financialFreedomAge ? (
-            <p className="font-bold">You will achieve Financial Freedom at age {result.financialFreedomAge}</p>
-          ) : (
-            <p className="font-bold">You will not achieve Financial Freedom by the desired age</p>
-          )}
-        </div>
+      <div className="bg-white text-black p-4 rounded-3xl shadow-lg w-2/3 mt-6 text-center">
+        {result.financialFreedomAge ? (
+          <p className="font-bold">You will achieve Financial Freedom Point at age {result.financialFreedomAge}</p>) : 
+          (<p className="font-bold">You will not achieve Financial Freedom Point at the desired age</p>)
+          }
+      </div>
       )}
     </div>
   );
