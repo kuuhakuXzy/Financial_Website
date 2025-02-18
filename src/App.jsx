@@ -62,6 +62,8 @@ const App = () => {
     let monthlySavings = savePerMonth;
     let data = [];
     let financialFreedomAge = null;
+
+    let withoutRiskFinancialFreedomAge = null;
     
     const monthlyRate = AIR / 12;
     
@@ -69,18 +71,16 @@ const App = () => {
       let annualSavings = 0;
       for (let month = 1; month <= 12; month++) {
         annualSavings += monthlySavings;
-// Box-Muller transform for normal distribution
-const Z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
+        // Box-Muller transform for normal distribution
+        const Z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
 
-// Log-normal return calculation
-const riskyReturn = Math.exp((RR - (Math.pow(sigma, 2) / 2)) / 12 + (sigma / Math.sqrt(12)) * Z) - 1;
-const totalReturn = u * riskyReturn + (1 - u) * (Math.pow(1 + RF, 1 / 12) - 1);
+        // Log-normal return calculation
+        const riskyReturn = Math.exp((RR - (Math.pow(sigma, 2) / 2)) / 12 + (sigma / Math.sqrt(12)) * Z) - 1;
+        const totalReturn = u * riskyReturn + (1 - u) * (Math.pow(1 + RF, 1 / 12) - 1);
 
-fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
-
+        fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
 
         wr_savings = wr_savings * (1 + monthlyRate) + monthlySavings;
-
 
         // Calculate Expected Wealth [E(W)]
         expectedWealth = expectedWealth * (1 + (u * RR + (1 - u) * RF) / 12) + monthlySavings;
@@ -95,6 +95,10 @@ fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
       if (!financialFreedomAge && fv_savings >= retirement_corpus) {
         financialFreedomAge = age;
       }
+
+      if (!withoutRiskFinancialFreedomAge && wr_savings >= retirement_corpus) {
+        withoutRiskFinancialFreedomAge = age;
+      }
     }
 
     setResult({
@@ -103,6 +107,7 @@ fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
       fv_savings: fv_savings.toLocaleString(),
       total_assets: fv_savings.toLocaleString(),
       financialFreedomAge,
+      withoutRiskFinancialFreedomAge,
     });
     setChartData(data);
   };
@@ -162,8 +167,12 @@ fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
       {result && (
       <div className="bg-white text-black p-4 rounded-3xl shadow-lg w-2/3 mt-6 text-center">
         {result.financialFreedomAge ? (
-          <p className="font-bold">You will achieve Financial Freedom Point at age {result.financialFreedomAge}</p>) : 
-          (<p className="font-bold">You will not achieve Financial Freedom Point at the desired age</p>)
+          <p className="font-bold">With risk, you will achieve Financial Freedom Point at age {result.financialFreedomAge}</p>) : 
+          (<p className="font-bold">With risk, you will not achieve Financial Freedom Point at the desired age</p>)
+          }
+        {result.withoutRiskFinancialFreedomAge ? (
+          <p className="font-bold">Without risk, you will achieve Financial Freedom Point without risk at age {result.withoutRiskFinancialFreedomAge}</p>) : 
+          (<p className="font-bold">Without risk, you will not achieve Financial Freedom Point without risk at the desired age</p>)
           }
       </div>
       )}
