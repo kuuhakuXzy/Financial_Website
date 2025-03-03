@@ -60,6 +60,16 @@ const App = () => {
     "riskyRisk",
   ];
   const accidentInputs = ["accidentAge", "wealthLoss", "insuranceCoverage"];
+  const percentageInputs = [
+
+    "inflationRate", "interestRate", "annualIncrease", "riskAllocation", "riskFreeReturn", "riskyReturn", "riskyRisk", "insuranceCoverage"
+  ];
+
+  const numberInputs = [
+
+    "currentAge", "retirementAge", "desiredSpending", "currentBankAsset", "savePerMonth", "insuranceCost", "accidentAge", "wealthLoss"
+
+  ];
 
   // Store simulation data and results
   const [chartData, setChartData] = useState([]);
@@ -90,10 +100,11 @@ const App = () => {
     const AI = annualIncrease / 100;
     const withdrawalRate = 0.040805;
 
-    const RF = riskFreeReturn / 100;
-    const RR = riskyReturn / 100;
-    const sigma = riskyRisk / 100;
-    const u = riskAllocation / 100;
+    const u = riskAllocation > 0 ? riskAllocation / 100 : 0;
+    const RF = riskFreeReturn / 100 || AIR;  // Default to overall interest rate if risk-free return is missing
+    const RR = riskyReturn / 100 || AIR;  // Default to overall interest rate if risky return is missing
+    const sigma = riskyRisk / 100 || 0;  // Default to 0 risk if no risk is applied
+    
 
     const fv_des = desiredSpending * 12 * Math.pow(1 + IR, yearsToRetirement);
     const retirement_corpus = fv_des / withdrawalRate;
@@ -121,9 +132,11 @@ const App = () => {
         lowerPercentileWealth -= insuranceCost;
 
         // Generate a random return using Box-Muller
-        const Z = Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
-        const riskyReturnCalc = Math.exp((RR - sigma ** 2 / 2) / 12 + (sigma / Math.sqrt(12)) * Z) - 1;
-        const totalReturn = u * riskyReturnCalc + (1 - u) * (Math.pow(1 + RF, 1 / 12) - 1);
+// Generate a random return using Box-Muller only if risk is applied
+const Z = u > 0 ? Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random()) : 0;
+const riskyReturnCalc = u > 0 ? Math.exp((RR - sigma ** 2 / 2) / 12 + (sigma / Math.sqrt(12)) * Z) - 1 : 0;
+const totalReturn = u > 0 ? u * riskyReturnCalc + (1 - u) * (Math.pow(1 + RF, 1 / 12) - 1) : monthlyRate;
+
 
         fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
         wr_savings = wr_savings * (1 + monthlyRate) + monthlySavings;
@@ -150,6 +163,7 @@ const App = () => {
       if (!withoutRiskFinancialFreedomAge && wr_savings >= retirement_corpus) {
         withoutRiskFinancialFreedomAge = age;
       }
+      
     }
 
     setResult({
@@ -207,13 +221,33 @@ const App = () => {
     }));
   };
 
+
   const handleChange = (e) => {
+
     const { name, value } = e.target;
-    const numericValue = parseFloat(value.replace(/,/g, "")) || 0;
-    setInputs({ ...inputs, [name]: numericValue });
+    if (percentageInputs.includes(name)) {
+
+      setInputs({ ...inputs, [name]: value === "" ? "" : parseFloat(value) });
+
+    } else {
+
+      setInputs({ ...inputs, [name]: value === "" ? "" : parseNumber(value) });
+
+    }
+
   };
 
-  const formatNumber = (num) => num.toLocaleString();
+  const formatNumber = (num) => {
+
+    return num.toLocaleString();
+  };
+
+
+
+  const parseNumber = (value) => {
+
+    return parseFloat(value.replace(/,/g, "")) || "";
+  }
 
   return (
     <div className="bg-indigo-900 min-h-screen flex flex-col items-center p-6 text-white">
@@ -229,16 +263,13 @@ const App = () => {
               )}
               <label className="block text-sm font-medium">{labels[key]}:</label>
               <input
-                type="text"
+                type={percentageInputs.includes(key) ? "number" : "text"}
                 name={key}
-                value={
-                  ["desiredSpending", "currentBankAsset", "savePerMonth", "insuranceCost"].includes(key)
-                    ? formatNumber(inputs[key])
-                    : inputs[key]
-                }
+                value={numberInputs.includes(key) ? formatNumber(inputs[key]) : inputs[key]}
                 onChange={handleChange}
                 className="w-full border-b-2 border-gray-300 outline-none p-1 bg-transparent"
               />
+
             </div>
           ))}
           {/* Calculate button placed right after main simulation inputs */}
@@ -252,9 +283,9 @@ const App = () => {
             <div key={key} className="mb-2">
               <label className="block text-sm font-medium">{labels[key]}:</label>
               <input
-                type="text"
+                type={percentageInputs.includes(key) ? "number" : "text"}
                 name={key}
-                value={formatNumber(inputs[key])}
+                value={numberInputs.includes(key) ? formatNumber(inputs[key]) : inputs[key]}
                 onChange={handleChange}
                 className="w-full border-b-2 border-gray-300 outline-none p-1 bg-transparent"
               />
@@ -295,12 +326,7 @@ const App = () => {
                 stroke="#387908"
                 name="Without-risk Wealth"
               />
-              <Line
-                type="monotone"
-                dataKey="requiredSavings"
-                stroke="#4dc94d"
-                name="Required Savings"
-              />
+              <Line type="monotone" dataKey="requiredSavings" stroke="#4dc94d" name="Required Savings"/>
               <Line
                 type="monotone"
                 dataKey="financialSavings"
