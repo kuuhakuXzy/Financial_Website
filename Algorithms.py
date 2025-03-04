@@ -19,7 +19,7 @@ riskReturn = 8 / 100
 riskyRisk = 15 / 100
 
 accidentAge = 40
-wealthLoss = 10000000000
+wealthLoss = 52345678930
 insuranceCoverage = 30/100
 shock = wealthLoss * (1 - insuranceCoverage)
 
@@ -119,11 +119,11 @@ if apply_accident == "yes" and (accidentAge in range(currentAge, retirementAge +
         print("  Expected Wealth:          {:,.3f}".format(expectedWealth))
         print("  Lower Percentile Wealth:  {:,.3f}".format(lowerPercentileWealth))
 
-    if wr_saving > retirement_corpus and financialFreedomNoRiskAge is None:
-        financialFreedomNoRiskAge = i
+        if wr_saving > retirement_corpus and financialFreedomNoRiskAge is None:
+            financialFreedomNoRiskAge = age
 
-    if fv_saving > retirement_corpus and financialFreedomAge is None:
-        financialFreedomAge = i
+        if fv_saving > retirement_corpus and financialFreedomAge is None:
+            financialFreedomAge = age
 
     if financialFreedomAge:
         print("\n✅ After accident, financial freedom achieved WITHOUT risk at age:", financialFreedomNoRiskAge)
