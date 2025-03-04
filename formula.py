@@ -2,25 +2,25 @@ import math
 import random
 
 # User Inputs
-currentAge = 35
+currentAge = 18 
 retirementAge = 65
-desiredSpending = 25000000
-inflation = 3 / 100
-currentAsset = 200000000
-interestRate = 5 / 100
+desiredSpending = 30000000
+inflation = 3.43 / 100
+currentAsset = 100000000
+interestRate = 4.7 / 100
 monthlyRate = interestRate / 12
-savePerMonth = 8000000
-annualIncrease = 7 / 100
-insuranceCost = 1000000      
+savePerMonth = 7000000
+annualIncrease = 10 / 100
+insuranceCost = 200000      
 
 riskAllocation = 50 / 100
-riskFreeReturn = 3 / 100
-riskReturn = 10 / 100
+riskFreeReturn = 2 / 100
+riskReturn = 8 / 100
 riskyRisk = 15 / 100
 
-accidentAge = 45
-wealthLoss = 100000000
-insuranceCoverage = 50/100
+accidentAge = 40
+wealthLoss = 10000000000
+insuranceCoverage = 30/100
 shock = wealthLoss * (1 - insuranceCoverage)
 
 fv_saving = currentAsset
@@ -63,11 +63,11 @@ for i in range(currentAge, retirementAge + 1):
 
     monthlySaving = monthlySaving * (1 + annualIncrease)
 
-    if wr_saving > retirement_corpus and financialFreedomAge is None:
-        financialFreedomAge = i
-
-    if fv_saving > retirement_corpus and financialFreedomNoRiskAge is None:
+    if wr_saving > retirement_corpus and financialFreedomNoRiskAge is None:
         financialFreedomNoRiskAge = i
+
+    if fv_saving > retirement_corpus and financialFreedomAge is None:
+        financialFreedomAge = i
 
     wealth_data.append((i, wr_saving, fv_saving, annualSaving, expectedWealth, lowerPercentileWealth))
 
@@ -81,12 +81,12 @@ for i in range(currentAge, retirementAge + 1):
 
 # Print Financial Freedom Summary
 if financialFreedomAge:
-    print("\n✅ Financial freedom achieved WITHOUT risk at age:", financialFreedomAge)
+    print("\n✅ Financial freedom achieved WITHOUT risk at age:", financialFreedomNoRiskAge)
 else:
     print("\n❌ With risk, you will NOT achieve financial freedom by retirement age.")
 
 if financialFreedomNoRiskAge:
-    print("\n✅ Financial freedom achieved WITH risk at age:", financialFreedomNoRiskAge)
+    print("\n✅ Financial freedom achieved WITH risk at age:", financialFreedomAge)
 else:
     print("\n❌ Without risk, you will NOT achieve financial freedom by retirement age.")
 
@@ -99,7 +99,7 @@ if apply_accident == "yes" and (accidentAge in range(currentAge, retirementAge +
     print("\n🚨 Applying accident impact at age {}! Wealth reduced by {:,.3f} 🚨".format(accidentAge, shock))
 
     financialFreedomAge = None
-    financialFreedomNoRiskAge = None  # Reset financial freedom tracking
+    financialFreedomNoRiskAge = None  
 
     for index in range(accidentAge - currentAge, len(wealth_data)):
         age, wr_saving, fv_saving, annualSaving, expectedWealth, lowerPercentileWealth = wealth_data[index]
@@ -119,19 +119,19 @@ if apply_accident == "yes" and (accidentAge in range(currentAge, retirementAge +
         print("  Expected Wealth:          {:,.3f}".format(expectedWealth))
         print("  Lower Percentile Wealth:  {:,.3f}".format(lowerPercentileWealth))
 
-        if wr_saving > retirement_corpus and financialFreedomAge is None:
-            financialFreedomAge = age
+    if wr_saving > retirement_corpus and financialFreedomNoRiskAge is None:
+        financialFreedomNoRiskAge = i
 
-        if fv_saving > retirement_corpus and financialFreedomNoRiskAge is None:
-            financialFreedomNoRiskAge = age
+    if fv_saving > retirement_corpus and financialFreedomAge is None:
+        financialFreedomAge = i
 
     if financialFreedomAge:
-        print("\n✅ After accident, financial freedom achieved WITHOUT risk at age:", financialFreedomAge)
+        print("\n✅ After accident, financial freedom achieved WITHOUT risk at age:", financialFreedomNoRiskAge)
     else:
         print("\n❌ After accident, with risk, you will NOT achieve financial freedom by retirement age.")
 
     if financialFreedomNoRiskAge:
-        print("\n✅ After accident, financial freedom achieved WITH risk at age:", financialFreedomNoRiskAge)
+        print("\n✅ After accident, financial freedom achieved WITH risk at age:", financialFreedomAge)
     else:
         print("\n❌ After accident, without risk, you will NOT achieve financial freedom by retirement age.")
 
