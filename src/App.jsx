@@ -89,23 +89,17 @@ const App = () => {
       for (let month = 1; month <= 12; month++) {
         annualSavings += monthlySavings;
 
-        // Deduct monthly insurance cost
-        fv_savings -= insuranceCost;
-        wr_savings -= insuranceCost;
-        expectedWealth -= insuranceCost;
-        lowerPercentileWealth -= insuranceCost;
-
         // Generate a random return using Box-Muller only if risk is applied
         const Z = u > 0 ? Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random()) : 0;
         const riskyReturnCalc = u > 0 ? Math.exp((RR - sigma ** 2 / 2) / 12 + (sigma / Math.sqrt(12)) * Z) - 1 : 0;
         const totalReturn = u > 0 ? u * riskyReturnCalc + (1 - u) * (Math.pow(1 + RF, 1 / 12) - 1) : monthlyRate;
 
-        fv_savings = fv_savings * (1 + totalReturn) + monthlySavings;
-        wr_savings = wr_savings * (1 + monthlyRate) + monthlySavings;
-        expectedWealth = expectedWealth * (1 + (u * RR + (1 - u) * RF) / 12) + monthlySavings;
+        fv_savings = fv_savings * (1 + totalReturn) + monthlySavings - insuranceCost;
+        wr_savings = wr_savings * (1 + monthlyRate) + monthlySavings - insuranceCost;
+        expectedWealth = expectedWealth * (1 + (u * RR + (1 - u) * RF) / 12) + monthlySavings - insuranceCost;
 
         const downsideReturn = u * (RR - sigma) + (1 - u) * RF;
-        lowerPercentileWealth = lowerPercentileWealth * (1 + downsideReturn / 12) + monthlySavings;
+        lowerPercentileWealth = lowerPercentileWealth * (1 + downsideReturn / 12) + monthlySavings - insuranceCost;
       }
 
       monthlySavings *= 1 + AI;
@@ -196,7 +190,7 @@ const App = () => {
   };
 
   const parseNumber = (value) => {
-    return parseFloat(value.replace(/,/g, '')) || '';
+    return parseFloat(value.replace(/,/g, '')) || 0 ;
   };
 
   return (
@@ -254,13 +248,21 @@ const App = () => {
         <div className="bg-white text-black p-4 rounded-3xl shadow-lg w-2/3 mt-6 text-center">
           {result.accidentApplied ? (
             <>
-              <p className="font-bold">After accident, with risk, you will achieve Financial Freedom Point at age {result.financialFreedomAge ? result.financialFreedomAge : 'N/A'}</p>
-              <p className="font-bold">After accident, without risk, you will achieve Financial Freedom Point at age {result.withoutRiskFinancialFreedomAge ? result.withoutRiskFinancialFreedomAge : 'N/A'}</p>
+              <p className="font-bold">
+                After accident, with risk, you will {result.financialFreedomAge ? `achieve Financial Freedom Point at age ${result.financialFreedomAge}` : 'not achieve Financial Freedom Point'}
+              </p>
+              <p className="font-bold">
+                After accident, without risk, you will {result.withoutRiskFinancialFreedomAge ? `achieve Financial Freedom Point at age ${result.withoutRiskFinancialFreedomAge}` : 'not achieve Financial Freedom Point'}
+              </p>
             </>
           ) : (
             <>
-              <p className="font-bold">With risk, you will achieve Financial Freedom Point at age {result.financialFreedomAge ? result.financialFreedomAge : 'N/A'}</p>
-              <p className="font-bold">Without risk, you will achieve Financial Freedom Point at age {result.withoutRiskFinancialFreedomAge ? result.withoutRiskFinancialFreedomAge : 'N/A'}</p>
+              <p className="font-bold">
+                With risk, you will {result.financialFreedomAge ? `achieve Financial Freedom Point at age ${result.financialFreedomAge}` : 'not achieve Financial Freedom Point'}
+              </p>
+              <p className="font-bold">
+                Without risk, you will {result.withoutRiskFinancialFreedomAge ? `achieve Financial Freedom Point at age ${result.withoutRiskFinancialFreedomAge}` : 'not achieve Financial Freedom Point'}
+              </p>
             </>
           )}
         </div>
